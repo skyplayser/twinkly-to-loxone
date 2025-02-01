@@ -1,0 +1,158 @@
+[
+    {
+        "id": "9e61e1ccebd0d540",
+        "type": "group",
+        "z": "421d030a48ea5227",
+        "name": "Twinkly Weihnachtsbaum",
+        "style": {
+            "stroke": "#92d04f",
+            "fill": "#e3f3d3",
+            "label": true
+        },
+        "nodes": [
+            "abbc7262c5e1b2d4",
+            "eff72e048c35fe2c",
+            "3c339a080a39a35f",
+            "53da9d8fcb23760a",
+            "fff96c9ba5dfbc08",
+            "dd71e616802234c1",
+            "4f21bffd65a6fe24"
+        ],
+        "x": 14,
+        "y": 19,
+        "w": 1112,
+        "h": 202
+    },
+    {
+        "id": "abbc7262c5e1b2d4",
+        "type": "http response",
+        "z": "421d030a48ea5227",
+        "g": "9e61e1ccebd0d540",
+        "name": "",
+        "statusCode": "200",
+        "headers": {},
+        "x": 400,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "eff72e048c35fe2c",
+        "type": "http in",
+        "z": "421d030a48ea5227",
+        "g": "9e61e1ccebd0d540",
+        "name": "Twinkly-Baum",
+        "url": "/loxone/twinkly/baum/:rgbval",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 110,
+        "y": 160,
+        "wires": [
+            [
+                "abbc7262c5e1b2d4",
+                "53da9d8fcb23760a"
+            ]
+        ]
+    },
+    {
+        "id": "3c339a080a39a35f",
+        "type": "set-colour-rgb",
+        "z": "421d030a48ea5227",
+        "g": "9e61e1ccebd0d540",
+        "server": "5e2dd08c762f580f",
+        "red": "",
+        "green": "",
+        "blue": "",
+        "hex": "",
+        "override": false,
+        "x": 1020,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "53da9d8fcb23760a",
+        "type": "function",
+        "z": "421d030a48ea5227",
+        "g": "9e61e1ccebd0d540",
+        "name": "Loxone to RGB",
+        "func": "var rgbval = msg.req.params.rgbval\nvar lightid = msg.req.params.id\n\nmsg.payload.lightsettings = {\n    api: lightid,\n    lightid: lightid,\n    on: true,\n    val: rgbval,\n    red: 0,\n    green: 0,\n    blue: 0,\n    bri: 0,\n}\n\n// Werte für hue:\n/** \nhue = hue / 360 * 65535;\nsat = sat * 255;\t\nbri = bri * 2.55;\n */\n\nvar hue = 0\nvar sat = 0\nvar bri = 0\nvar blue = Math.floor(rgbval / 1000000);\nvar green = Math.floor((rgbval - blue * 1000000) / 1000);\nvar red = rgbval - blue * 1000000 - green * 1000;\n\n\nif (blue > 0 || green > 0 || red > 0) {\n\n    if ((red >= green) && (green >= blue)) {\n        if (red == blue) {\n            hue = 0;\n        } else {\n            hue = 60 * (green - blue) / (red - blue);\n        }\n        sat = (red - blue) / red;\n        bri = red;\n    } else if ((green > red) && (red >= blue)) {\n        hue = 60 * (2 - (red - blue) / (green - blue));\n        sat = (green - blue) / green;\n        bri = green;\n    } else if ((green >= blue) && (blue > red)) {\n        hue = 60 * (2 + (blue - red) / (green - red));\n        sat = (green - red) / green;\n        bri = green;\n    } else if ((blue > green) && (green > red)) {\n        hue = 60 * (4 - (green - red) / (blue - red));\n        sat = (blue - red) / blue;\n        bri = blue;\n    } else if ((blue > red) && (red >= green)) {\n        hue = 60 * (4 + (red - green) / (blue - green));\n        sat = (blue - green) / blue;\n        bri = blue;\n    } else if ((red >= blue) && (blue > green)) {\n        hue = 60 * (6 - (blue - green) / (red - green));\n        sat = (red - green) / red;\n        bri = red;\n    }\n\n    // Werte für HUE normieren (hue = 0-65535, sat 0-255, bri 0-255)\n    hue = hue / 360 * 65535;\n    sat = sat * 255;\n    bri = bri * 2.55;\n}\n\n\nmsg.payload.lightsettings.red = red * 2.5\nmsg.payload.lightsettings.green = green * 2.5\nmsg.payload.lightsettings.blue = blue * 2.5\nmsg.payload.lightsettings.h_bri = (bri)\n\nif (hue == 0 && sat == 0 && bri == 0) {\n    msg.payload.lightsettings.on = false\n}\n\nreturn msg",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 180,
+        "wires": [
+            [
+                "fff96c9ba5dfbc08"
+            ]
+        ]
+    },
+    {
+        "id": "fff96c9ba5dfbc08",
+        "type": "function",
+        "z": "421d030a48ea5227",
+        "g": "9e61e1ccebd0d540",
+        "name": "RGB to HEX",
+        "func": "// Node-RED Function Code\n// Diese Funktion wandelt RGB-Werte in einen Hex-Farbcode um und gibt ihn als msg.payload aus\n\nmsg.payload = convertToHex(msg.payload);\n\nreturn msg;\n\n// Funktion zur Umwandlung von RGB-Werten in Hex\nfunction convertToHex(payload) {\n    // Extrahiere RGB-Werte aus dem payload\n    let red = Math.round(msg.payload.lightsettings.red);\n    let green = Math.round(msg.payload.lightsettings.green);\n    let blue = Math.round(msg.payload.lightsettings.blue);\n\n    // Überprüfe, ob die Werte innerhalb des gültigen Bereichs (0-255) liegen\n    if (red < 0 || red > 255 || green < 0 || green > 255 || blue < 0 || blue > 255) {\n        throw new Error(\"Ungültige RGB-Werte. Werte müssen zwischen 0 und 255 liegen.\");\n    }\n\n    // Konvertiere RGB-Werte in Hex-Farbcode\n    let hexColor = `#${toHex(red)}${toHex(green)}${toHex(blue)}`;\n\n    return hexColor;\n}\n\n// Helferfunktion zum Konvertieren einer Zahl in einen 2-stelligen Hex-Wert\nfunction toHex(value) {\n    return value.toString(16).padStart(2, \"0\").toUpperCase();\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 180,
+        "wires": [
+            [
+                "dd71e616802234c1"
+            ]
+        ]
+    },
+    {
+        "id": "dd71e616802234c1",
+        "type": "change",
+        "z": "421d030a48ea5227",
+        "g": "9e61e1ccebd0d540",
+        "name": "",
+        "rules": [
+            {
+                "t": "move",
+                "p": "payload",
+                "pt": "msg",
+                "to": "hex",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 800,
+        "y": 180,
+        "wires": [
+            [
+                "3c339a080a39a35f"
+            ]
+        ]
+    },
+    {
+        "id": "4f21bffd65a6fe24",
+        "type": "comment",
+        "z": "421d030a48ea5227",
+        "g": "9e61e1ccebd0d540",
+        "name": "Benötigte Palette",
+        "info": "@aeroniemi/node-red-xled2.1.2",
+        "x": 1020,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "5e2dd08c762f580f",
+        "type": "xled-server",
+        "host": "10.69.200.155"
+    }
+]
